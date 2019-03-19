@@ -77,7 +77,7 @@ Access to the ERFs is granted through a Google Group. The name of the google gro
 
 Add the service account to the Entity Read Files **Read** Google Group.
 
-![alt_text](images/erf.png "image_tooltip")
+![alt_text](erf.png "image_tooltip")
 
 ### Multiple Partners
 If you are intending to use many google groups, it is also possible to set up a single Google Group containing all other Google Groups. You can then Add the Service account to this Google Group to grant access to all accounts at once
