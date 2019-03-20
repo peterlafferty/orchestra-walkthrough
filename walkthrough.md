@@ -77,12 +77,55 @@ Access to the ERFs is granted through a Google Group. The name of the google gro
 
 Add the service account to the Entity Read Files **Read** Google Group.
 
-![alt_text](erf.png "image_tooltip")
+![alt_text](./erf.png "image_tooltip")
 
 ### Multiple Partners
 If you are intending to use many google groups, it is also possible to set up a single Google Group containing all other Google Groups. You can then Add the Service account to this Google Group to grant access to all accounts at once
 
 ## Orchestra Configuration Variables
+
+Set the `gce_zone` you can find the zone in your list of composer environments:
+``` bash
+ gcloud --project {{project_id}} composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set gce_zone [ZONE]
+```
+
+Next link a bucket. You can view your buckets with:
+``` bash
+gsutil ls -p {{project_id}}
+```
+
+Set a configuration variable `gcs_bucket` for the bucket name without the `gs://` prefix:
+``` bash
+ gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set gcs_bucket [BUCKET NAME]
+```
+
+Set the project id:
+``` bash
+ gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set cloud_project_id {{project_id}}
+```
+
+Create a BigQuery dataseet and assign the name to `erf_bq_dataset`:
+``` bash
+gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set erf_bg_dataset [dataset name]
+```
+
+Set the ``partner_ids`` separated by commas:
+``` bash
+gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set partner_ids [partner ids]
+```
+
+Set the [Private ERF tables](https://developers.google.com/bid-manager/guides/entity-read/format-v2#private-tables) that you would like to import with `private_entity_types`. Separated by commas:
+``` bash
+gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set private_entity_types [entity types]
+```
+
+Set a name for your dag as it will show in the UI with `sequential_erf_dag_name`:
+``` bash
+gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set sequential_erf_dag_name [any name]
+```
+
+
+
 ## Adding Workflow DAGs
 ## Final Step
 <walkthrough-conclusion-trophy></walkthrough-conclusion-trophy>
