@@ -55,15 +55,23 @@ Choose the LOCATION and the NAME for the composer environment.
 
 The location is not the same as the Compute Engine locations [choose from the available locations](https://cloud.google.com/composer/pricing#pricing_table).
 
+Save the location in an environment variable:
+``` bash
+ export LOCATION=your_choice
+```
+
 The NAME must start with a lowercase letter followed by up to 63 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.
 
+Save the name in an environment variable:
+``` bash
+ export ENVIRONMENT=your_choice
+```
 
 This command will set up the composer environment and use the default service account.
 
 ``` bash
-  gcloud composer environments create --python-version 2 --location LOCATION NAME
+  gcloud composer environments create --python-version 2 --location $LOCATION $ENVIRONMENT
 ```
-There are a lot more options available. 
 
 [Read more](https://cloud.google.com/composer/docs/how-to/managing/creating) about setting up composer in the documentation.
 
@@ -124,6 +132,8 @@ bq --location=US mk {{project-name}}:NAME
 
 ## Orchestra Configuration Variables
 
+The following Airflow variables will need to be set.
+
 Name  | Description
 ------- | --------
 gce_zone | The Compute Engine Zone for the Composer environment.
@@ -134,44 +144,77 @@ parnters_id | The list of partners ids from DV360, used for Entity Read Files, c
 private_entity_types | A comma separated list of Private Entity Read Files you would like to import.
 sequential_erf_dag_name | The name of your DAG as it will show up in the UI
 
-Set the `gce_zone` you can find the zone in your list of composer environments:
+
+## Zone - Configure Orchestra
+
+Set the `gce_zone` using the LOCATION and ENVIRONMENT variables set earlier:
+
 ``` bash
- gcloud --project {{project_id}} composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set gce_zone [ZONE]
+ gcloud --project {{project_id}} composer environments run $ENVIRONMENT --location $LOCATION variables -- --set gce_zone $LOCATION
 ```
 
-Next link a bucket. You can view your buckets with:
+## Cloud Storage - Configure Orchestra
+
+
+Link a bucket. There is a bucket already linked to your composer environment:
 ``` bash
-gsutil ls -p {{project_id}}
+ gcloud composer environments describe $ENVIRONMENT --location $LOCATION | grep bucket
 ```
 
-Set a configuration variable `gcs_bucket` for the bucket name without the `gs://` prefix:
+Set the `gcs_bucket` variable to the bucket name without the schema:
 ``` bash
- gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set gcs_bucket [BUCKET NAME]
+ gcloud --project orchestra-walkthrough composer environments run $ENVIRONMENT --location $LOCATION variables -- --set gcs_bucket BUCKET
 ```
 
-Set the project id:
+## Project ID - Configure Orchestra
+
+
+Set the `cloud_project_id`:
 ``` bash
- gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set cloud_project_id {{project_id}}
+ gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set cloud_project_id {{project_id}}
 ```
 
-Create a BigQuery dataseet and assign the name to `erf_bq_dataset`:
+## BigQuery - Configure Orchestra
+
+
+List BigQuery datasets
 ``` bash
-gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set erf_bg_dataset [dataset name]
+ bq ls
 ```
 
-Set the ``partner_ids`` separated by commas:
+Set  `erf_bq_dataset` to be the name of a dataset in BigQuery:
 ``` bash
-gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set partner_ids [partner ids]
+ gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set erf_bg_dataset DATASET
 ```
+
+old code:
+``` bash
+ gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set erf_bg_table DATASET
+```
+
+## Partners - Configure Orchestra
+
+
+Set the ``partner_ids`` (separated by commas):
+``` bash
+ gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set partner_ids PARTNERTIDS
+```
+
+## ERF Tables - Configure Orchestra
 
 Set the [Private ERF tables](https://developers.google.com/bid-manager/guides/entity-read/format-v2#private-tables) that you would like to import with `private_entity_types`. Separated by commas:
+
+**List entities here**
+
 ``` bash
-gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set private_entity_types [entity types]
+gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set private_entity_types ENTITY_TYPES
 ```
 
-Set a name for your dag as it will show in the UI with `sequential_erf_dag_name`:
+## DAG name - Configure Orchestra
+
+Set a name for your DAG as it will show in the UI with `sequential_erf_dag_name`:
 ``` bash
-gcloud --project {{project_id}} beta composer environments run [COMPOSER ENVIRONMENT] --location [LOCATION] variables -- --set sequential_erf_dag_name [any name]
+gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set sequential_erf_dag_name [any name]
 ```
 
 
