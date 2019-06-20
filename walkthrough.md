@@ -2,14 +2,6 @@
 # Setting Up Orchestra
 Orchestra is a tool for managing DV360 tasks like downloading ERFs, parsing them and uploading them to BigQuery.
 
-Ocrhestra is a configuration of Google Composer which is a managed implementation of Apache Airflow. 
-
-Airflow is a platform to programmatically, author, schedule and monitor workflows.
-
-Workflows in Airflow are represented by DAGs.
-
-Orchestra includes several DAGs for working with DV360 and the Google Marketing Platform.
-
 ## Before starting 
 You will need:
 * a Google Cloud Platform account
@@ -51,22 +43,28 @@ This can take up to 30 minutes.
 
 The environment should be set to use Python 2 as Orchestra currently only supports Python 2.
 
-Choose the LOCATION and the NAME for the composer environment. 
 
-The location is not the same as the Compute Engine locations [choose from the available locations](https://cloud.google.com/composer/pricing#pricing_table).
+## Location 
+Choose the LOCATION for the composer environment. 
 
 Save the location in an environment variable:
 ``` bash
  export LOCATION=your_choice
 ```
+The location is not the same as the Compute Engine locations [choose from the available locations](https://cloud.google.com/composer/pricing#pricing_table).
 
-The NAME must start with a lowercase letter followed by up to 63 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.
+# Environment Name
+
+Choose the NAME for the composer environment. 
+
+> The NAME must start with a lowercase letter followed by up to 63 lowercase letters, numbers, or hyphens, and cannot end with a hyphen.
 
 Save the name in an environment variable:
 ``` bash
  export ENVIRONMENT=your_choice
 ```
 
+## Create Composer Environment
 This command will set up the composer environment and use the default service account.
 
 ``` bash
@@ -78,19 +76,17 @@ This command will set up the composer environment and use the default service ac
 ## Service Account
 A service account will be used to grant access to Google Cloud Platform from DV360.
 
-For simplicity you can use the `Compute Engine default service account`. 
-
 Run the following command to see the current service accounts:
 
 ``` bash
 gcloud iam service-accounts list --project={{project-name}}
 ```
 
-Take a note of this email address as you will add it to DV360.
+Take a note of the default service account email address as you will add it to DV360.
 
 [Read more](https://cloud.google.com/iam/docs/service-accounts) about service accounts in the documentation.
 ## Display and Video 360 Setup
-Using the service account's email address [create a new user in DV360](https://support.google.com/displayvideo/answer/2723011?hl=en).
+Using the service account email address [create a new user in DV360](https://support.google.com/displayvideo/answer/2723011?hl=en).
 
 ### Account Configuration
 Give the new user the following:
@@ -103,9 +99,9 @@ The service account needs access to the Entity Read Files in DV360.
 
 Access to the ERFs is granted through a Google Group. The name of the google group can be found in DV360
 
-The settings menu is on the left. You might need to search for a partner or advertiser before the relevant menu shows.
+The settings menu is on the left. You might need to search for a partner or advertiser before the relevant menu shows:
 
-**Settings > Basic Details > Entity Read Files Configuration  > Entity Read Files Read Google Group**
+**Settings > Basic Details > Entity Read Files Configuration  > Entity Read Files Read Google Group**.
 
 [Add the service account](https://github.com/peterlafferty/orchestra-walkthrough/blob/master/erf.png) to the Entity Read Files **Read** Google Group.
 
@@ -122,7 +118,7 @@ You need to create that dataset before running the workflow.
 > Dataset IDs must be alphanumeric (plus underscores) and must be at most 1024
 characters long.
 
-Use the following command to create a dataset set the NAME and change the location if required:
+Use the following command to create a dataset. Set the NAME and change the location if required:
 
 ``` bash
 bq --location=US mk {{project-name}}:NAME
@@ -132,7 +128,7 @@ bq --location=US mk {{project-name}}:NAME
 
 ## Orchestra Configuration Variables
 
-The following Airflow variables will need to be set.
+The following variables will need to be set in Airflow.
 
 Name  | Description
 ------- | --------
@@ -189,7 +185,7 @@ Set  `erf_bq_dataset` to be the name of a dataset in BigQuery:
 
 old code:
 ``` bash
- gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set erf_bg_table DATASET
+ gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set erf_bq_table DATASET
 ```
 
 ## Partners - Configure Orchestra
@@ -202,23 +198,78 @@ Set the ``partner_ids`` (separated by commas):
 
 ## ERF Tables - Configure Orchestra
 
-Set the [Private ERF tables](https://developers.google.com/bid-manager/guides/entity-read/format-v2#private-tables) that you would like to import with `private_entity_types`. Separated by commas:
+Set  `private_entity_types` to the [Private ERF tables](https://developers.google.com/bid-manager/guides/entity-read/format-v2#private-tables) (eparated by commas).
 
-**List entities here**
+The private tables are (at the time of writing):
+ * Advertiser
+ * Campaign
+ * Creative
+ * CustomAffinity
+ * InsertionOrder
+ * InventorySource
+ * LineItem
+ * Partner
+ * Pixel
+ * UniversalChannel
+
+Set the variable:
 
 ``` bash
-gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set private_entity_types ENTITY_TYPES
+gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set private_entity_types PRIVATE_TABLES
 ```
 
 ## DAG name - Configure Orchestra
 
-Set a name for your DAG as it will show in the UI with `sequential_erf_dag_name`:
+Set `sequential_erf_dag_name`:
 ``` bash
-gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set sequential_erf_dag_name [any name]
+gcloud --project {{project_id}} beta composer environments run $ENVIRONMENT --location $LOCATION variables -- --set sequential_erf_dag_name ANY_NAME
+```
+
+## Adding Workflow DAGs
+As with any other Airflow deployment, you will need DAG files describing your Workflows to schedule and run your tasks; plus, you'll need hooks, operators and other libraries to help building those tasks.
+
+In the Orchestra repo you will find the following directories:
+### dags 
+Includes a sample DAG file to upload multiple partners ERF files from the Cloud Storage Bucket to BigQuery.
+
+### hooks
+Includes the hooks needed to connect to the reporting APIs of GMP platforms (CM and DV360).
+
+### operators
+Includes two subfolders for basic operators for CM and DV360 APIs, respectively.
+
+### schema
+Includes files describing the structure of most CM and DV360 entities (can be useful when creating new report or to provide the schema to create a BQ table).
+### utils
+A general purpose folder to include utility files.
+
+## Upload Workflows to Cloud Storage
+List the Google Cloud Storage options and choose the one associated with your Composer environment.
+
+``` bash
+ gsutil ls
+``` 
+
+to make the next steps easier export the URI to a variable:
+``` bash
+ export BUCKET=gs://bucketname/
+```
+
+Need to figure out where the orchestra code sits:
+```
+gsutil cp operators ${BUCKET}dags/operators
+gsutil cp -r hooks ${BUCKET}dags/hooks
+gsutil cp -r schema ${BUCKET}dags/schema
+gsutil cp -r utils ${BUCKET}/dags/utils
+gsutil cp dags/sequential_erf_uploader_to_bq_dag.py ${BUCKET}/dags/
+
+
 ```
 
 
 
-## Adding Workflow DAGs
+
+
+
 ## Final Step
 <walkthrough-conclusion-trophy></walkthrough-conclusion-trophy>
